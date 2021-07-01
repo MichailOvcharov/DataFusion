@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!--<html xmlns:th="https://www.thymeleaf.org">-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test-csv</title>
+  </head>
+  <body>
+    <div>
+      <input type="file" accept=".zip,.rar,.7z" style="margin: 8px" id="file" />
+      <input type="text" name="url" style="margin: 8px" value="http://localhost:3000" id="url" />
+    </div>
+    <div>
+      <button style="margin: 8px">Send</button>
+    </div>
+
+    <script>
+      document.querySelector('button').addEventListener('click', function (event) {
+        event.preventDefault()
+
+        const file = document.querySelector('#file').files[0]
+        const fd = new FormData()
+        fd.append('file', file)
+
+        const url = document.querySelector('#url').value
+
+        fetch(`${url}`, {
+          method: 'POST',
+          body: fd,
+        })
+          .then(function (resp) {
+            return resp.blob()
+          })
+          .then(function (blob) {
+            const url = window.URL.createObjectURL(blob)
+            let a = document.createElement('a')
+            a.href = url
+            a.download = 'result.json'
+            document.body.appendChild(a)
+            a.click()
+            a.remove()
+          })
+          .catch(function (e) {
+            console.error(e)
+          })
+      })
+    </script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+server:
+  port: 3000
+logging:
+  file:
+    max-history: 20
+spring:
+    servlet:
+      multipart:
+        max-file-size: 10MB
+        max-request-size: 15MB
+    thymeleaf:
+      prefix:  classpath:/templates/
+#      suffix: .html
+#      enable-spring-el-compiler: false
+
+
