@@ -26,7 +26,7 @@ public class MergeController {
     @Autowired
     private MergeService mergeService;
 
-    public static void main(String[] args) throws IOException {
+//    public static void main(String[] args) throws IOException {
         // Запись в архив
 //        ZipOutputStream zout = new ZipOutputStream(new FileOutputStream("C:\\Users\\Michail\\Desktop\\DataFusion\\upload-dir\\archive2.zip"));
 //        ZipEntry entry = new ZipEntry("Резюме_ОвчаровМБ.doc");
@@ -73,7 +73,7 @@ public class MergeController {
 //                        "C:\\Users\\Michail\\Desktop\\DataFusion\\upload-dir\\" + entry.getName())));
 //            }
 //        }
-    }
+//    }
 
     private final StorageService storageService;
 
@@ -89,9 +89,10 @@ public class MergeController {
         storageService.store(file);
         String fileName = file.getOriginalFilename();
         mergeService.zipOut(fileName);
-        FirstObject firstObject = mergeService.readDataLineToFirstObject();
-        SecondObject secondObject = mergeService.readDataLineToSecondObject();
-        ThirdObject thirdObject = mergeService.readDataLineToThierdObject();
+        String dirCsv = "/upload-dir/";
+        FirstObject firstObject = mergeService.readDataLineToFirstObject(dirCsv);
+        SecondObject secondObject = mergeService.readDataLineToSecondObject(dirCsv);
+        ThirdObject thirdObject = mergeService.readDataLineToThirdObject(dirCsv);
         JsonItog jsonItog = new JsonItog();
         jsonItog.setFirstObject(firstObject);
         jsonItog.setSecondObject(secondObject);

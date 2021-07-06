@@ -2,10 +2,13 @@ package ru.omb.service;
 
 import com.opencsv.CSVReader;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ru.omb.entity.FirstObject;
 import ru.omb.entity.SecondObject;
 import ru.omb.entity.ThirdObject;
+import ru.omb.exception.CsvIllegalArgumentException;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -20,16 +23,7 @@ import java.util.zip.*;
 @Service
 public class MergeService {
 
-//    public static void main(String[] args) {
-//        String[] listFile = createFirstObject();
-//        List<String> listCSV = findCSVFile2();
-//        for (String csvFile :listCSV) {
-//            readDataLineByLine(csvFile);
-//        }
-//         readDataLineByLine(listCSV.get(0));
-//        Integer i = null;
-//        System.out.println(i);
-//    }
+    private static final Logger LOG = LoggerFactory.getLogger(MergeService.class);
 
     public void zipOut(String archiveName) throws IOException {
         String dir = System.getProperty("user.dir") + "/upload-dir/";
@@ -37,11 +31,9 @@ public class MergeService {
         Enumeration entries = zip.entries();
         while(entries.hasMoreElements()) {
             ZipEntry entry  = (ZipEntry) entries.nextElement();
-//            System.out.println(entry .getName());
-//            System.out.println(entry .getSize());
             if (!entry .isDirectory()) {
                 write(zip.getInputStream(entry), new BufferedOutputStream(new FileOutputStream(
-                        dir + entry.getName())
+                                dir + entry.getName())
                         )
                 );
             }
@@ -57,93 +49,133 @@ public class MergeService {
         in.close();
     }
 
-    public List<String> findCSVFile() {
-        String dir = System.getProperty("user.dir") + "/upload-dir/";
+    // Нахождение всех csv файлов в папке upload-dir
+    public List<String> findCSVFile(String dirCsv) {
+        String dir = System.getProperty("user.dir") + dirCsv;
         File fileDir = new File(dir);
         List<String> listCSVFile = new ArrayList<>();
         String[] listFile = fileDir.list();
-        for (String file: listFile) {
-            if (file.substring(file.length() - 3).equals("csv")) {
+        for (String file : listFile) {
+            if (file.substring(file.length() - 3).equalsIgnoreCase("csv")) {
                 listCSVFile.add(file);
-//                System.out.println(file);
             }
         }
         return listCSVFile;
     }
 
-    // Заполненеие данными первого объекта
-    public FirstObject readDataLineToFirstObject()  {
+    // Заполнение данными первого объекта
+    public FirstObject readDataLineToFirstObject(String dirCsv)  {
         FirstObject firstObject = new FirstObject();
         try {
-            String dir = System.getProperty("user.dir") + "/upload-dir/";
-            List<String> listCSV = findCSVFile();
+            String dir = System.getProperty("user.dir") + dirCsv;
+            List<String> listCSV = findCSVFile(dirCsv);
             for (String file : listCSV) {
                 FileReader filereader = new FileReader(dir + file);
                 CSVReader csvReader = new CSVReader(filereader);
                 String[] nextRecord;
                 while ((nextRecord = csvReader.readNext()) != null) {
-                    for (int i = 0; i < nextRecord.length; i++) {
-                        System.out.print(nextRecord[i] + "\t");
-                        if (nextRecord[i].equalsIgnoreCase("mark01") && (i < nextRecord.length)) {
+                    for (int i = 0; (i + 1)< nextRecord.length; i++) {
+                        if (nextRecord[i].equalsIgnoreCase("mark01")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (firstObject.getMark01() != null) {
-                                    firstObject.setMark01(firstObject.getMark01() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    firstObject.setMark01(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (firstObject.getMark01() != null) {
+                                        firstObject.setMark01(firstObject.getMark01() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке mark01", nextRecord[i + 1]);
+                                    } else {
+                                        firstObject.setMark01(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке mark01", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1] , "mark01", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("mark17") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("mark17")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (firstObject.getMark17() != null) {
-                                    firstObject.setMark17(firstObject.getMark17() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    firstObject.setMark17(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (firstObject.getMark17() != null) {
+                                        firstObject.setMark17(firstObject.getMark17() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке mark17", nextRecord[i + 1]);
+                                    } else {
+                                        firstObject.setMark17(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке mark17", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1] , "mark17", nfe);
                                 }
                             }
 
-                        } else if (nextRecord[i].equalsIgnoreCase("mark23") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("mark23")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (firstObject.getMark23() != null) {
-                                    firstObject.setMark23(firstObject.getMark23() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    firstObject.setMark23(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (firstObject.getMark23() != null) {
+                                        firstObject.setMark23(firstObject.getMark23() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке mark23", nextRecord[i + 1]);
+                                    } else {
+                                        firstObject.setMark23(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке mark23", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1] , "mark23", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("mark35") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("mark35")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (firstObject.getMark35() != null) {
-                                    firstObject.setMark35(firstObject.getMark35() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    firstObject.setMark35(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (firstObject.getMark35() != null) {
+                                        firstObject.setMark35(firstObject.getMark35() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке mark35", nextRecord[i + 1]);
+                                    } else {
+                                        firstObject.setMark35(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке mark35", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1] , "mark35", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("markFV") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("markFV")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (firstObject.getMarkFV() != null) {
-                                    firstObject.setMarkFV(firstObject.getMarkFV() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    firstObject.setMarkFV(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (firstObject.getMarkFV() != null) {
+                                        firstObject.setMarkFV(firstObject.getMarkFV() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке markFV", nextRecord[i + 1]);
+                                    } else {
+                                        firstObject.setMarkFV(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке markFV", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1] , "markFV", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("markFX") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("markFX")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (firstObject.getMarkFX() != null) {
-                                    firstObject.setMarkFX(firstObject.getMarkFX() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    firstObject.setMarkFX(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (firstObject.getMarkFX() != null) {
+                                        firstObject.setMarkFX(firstObject.getMarkFX() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке markFV", nextRecord[i + 1]);
+                                    } else {
+                                        firstObject.setMarkFX(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке markFV", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1] , "markFХ", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("markFT") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("markFT")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (firstObject.getMarkFT() != null) {
-                                    firstObject.setMarkFT(firstObject.getMarkFT() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    firstObject.setMarkFT(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (firstObject.getMarkFT() != null) {
+                                        firstObject.setMarkFT(firstObject.getMarkFT() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке markFT", nextRecord[i + 1]);
+                                    } else {
+                                        firstObject.setMarkFT(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("В первый объект добавлено значение {} к метке markFT", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1] , "markFT", nfe);
                                 }
                             }
                         }
                     }
-                    System.out.println();
                 }
             }
         }
@@ -154,71 +186,113 @@ public class MergeService {
     }
 
     // Заполнение данными второго объекта
-    public SecondObject readDataLineToSecondObject()  {
+    public SecondObject readDataLineToSecondObject(String dirCsv)  {
         SecondObject secondObject = new SecondObject();
         try {
-            String dir = System.getProperty("user.dir") + "/upload-dir/";
-            List<String> listCSV = findCSVFile();
+            String dir = System.getProperty("user.dir") + dirCsv;
+            List<String> listCSV = findCSVFile(dirCsv);
             for (String file : listCSV) {
                 FileReader filereader = new FileReader(dir + file);
                 CSVReader csvReader = new CSVReader(filereader);
                 String[] nextRecord;
                 while ((nextRecord = csvReader.readNext()) != null) {
-                    for (int i = 0; i < nextRecord.length; i++) {
-                        if (nextRecord[i].equalsIgnoreCase("mark01") && (i < nextRecord.length)) {
+                    for (int i = 0; (i + 1) < nextRecord.length; i++) {
+                        if (nextRecord[i].equalsIgnoreCase("mark01")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (secondObject.getMark01() != null) {
-                                    secondObject.setMark01(secondObject.getMark01() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    secondObject.setMark01(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (secondObject.getMark01() != null) {
+                                        secondObject.setMark01(secondObject.getMark01() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке mark01", nextRecord[i + 1]);
+                                    } else {
+                                        secondObject.setMark01(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке mark01", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "mark01", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("mark17") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("mark17")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (secondObject.getMark17() != null) {
-                                    secondObject.setMark17(secondObject.getMark17() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    secondObject.setMark17(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (secondObject.getMark17() != null) {
+                                        secondObject.setMark17(secondObject.getMark17() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке mark17", nextRecord[i + 1]);
+                                    } else {
+                                        secondObject.setMark17(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке mark17", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "mark17", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("mark23") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("mark23")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (secondObject.getMark23() != null) {
-                                    secondObject.setMark23(secondObject.getMark23() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    secondObject.setMark23(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (secondObject.getMark23() != null) {
+                                        secondObject.setMark23(secondObject.getMark23() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке mark23", nextRecord[i + 1]);
+                                    } else {
+                                        secondObject.setMark23(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке mark23", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "mark23", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("mark35") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("mark35")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (secondObject.getMark35() != null) {
-                                    secondObject.setMark35(secondObject.getMark35() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    secondObject.setMark35(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (secondObject.getMark35() != null) {
+                                        secondObject.setMark35(secondObject.getMark35() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке mark35 ", nextRecord[i + 1]);
+                                    } else {
+                                        secondObject.setMark35(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке mark35", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "mark35", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("markFV") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("markFV")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (secondObject.getMarkFV() != null) {
-                                    secondObject.setMarkFV(secondObject.getMarkFV() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    secondObject.setMarkFV(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (secondObject.getMarkFV() != null) {
+                                        secondObject.setMarkFV(secondObject.getMarkFV() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке markFV", nextRecord[i + 1]);
+                                    } else {
+                                        secondObject.setMarkFV(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке markFV", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "markFV", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("markFX") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("markFX")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (secondObject.getMarkFX() != null) {
-                                    secondObject.setMarkFX(secondObject.getMarkFX() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    secondObject.setMarkFX(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (secondObject.getMarkFX() != null) {
+                                        secondObject.setMarkFX(secondObject.getMarkFX() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке markFX", nextRecord[i + 1]);
+                                    } else {
+                                        secondObject.setMarkFX(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке markFX", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "markFХ", nfe);
                                 }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("markFT") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("markFT")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                if (secondObject.getMarkFT() != null) {
-                                    secondObject.setMarkFT(secondObject.getMarkFT() + Integer.valueOf(nextRecord[i + 1]));
-                                } else {
-                                    secondObject.setMarkFT(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    if (secondObject.getMarkFT() != null) {
+                                        secondObject.setMarkFT(secondObject.getMarkFT() + Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке markFT", nextRecord[i + 1]);
+                                    } else {
+                                        secondObject.setMarkFT(Integer.valueOf(nextRecord[i + 1]));
+                                        LOG.info("Во второй объект добавлено значение {} к метке markFT", nextRecord[i + 1]);
+                                    }
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "markFT", nfe);
                                 }
                             }
                         }
@@ -233,7 +307,7 @@ public class MergeService {
     }
 
     // Заполнение данными третьего объекта
-    public ThirdObject readDataLineToThierdObject()  {
+    public ThirdObject readDataLineToThirdObject(String dirCsv)  {
         ThirdObject thirdObject = new ThirdObject();
         List<Integer> mark01 = new ArrayList<>();
         List<Integer> mark17 = new ArrayList<>();
@@ -243,41 +317,76 @@ public class MergeService {
         List<Integer> markFX = new ArrayList<>();
         List<Integer> markFT = new ArrayList<>();
         try {
-            String dir = System.getProperty("user.dir") + "/upload-dir/";
-            List<String> listCSV = findCSVFile();
+            String dir = System.getProperty("user.dir") + dirCsv;
+            List<String> listCSV = findCSVFile(dirCsv);
             for (String file : listCSV) {
                 FileReader filereader = new FileReader(dir + file);
                 CSVReader csvReader = new CSVReader(filereader);
                 String[] nextRecord;
                 while ((nextRecord = csvReader.readNext()) != null) {
-                    for (int i = 0; i < nextRecord.length; i++) {
-                        if (nextRecord[i].equalsIgnoreCase("mark01") && (i < nextRecord.length)) {
+                    for (int i = 0; (i + 1) < nextRecord.length; i++) {
+                        if (nextRecord[i].equalsIgnoreCase("mark01")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                mark01.add(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    mark01.add(Integer.valueOf(nextRecord[i + 1]));
+                                    LOG.info("В третий объект добавлено значение {} в список к метке mark01", nextRecord[i + 1]);
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "mark01", nfe);
+                                }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("mark17") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("mark17")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                mark17.add(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    mark17.add(Integer.valueOf(nextRecord[i + 1]));
+                                    LOG.info("В третий объект добавлено значение {} в список к метке mark17", nextRecord[i + 1]);
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "mark01", nfe);
+                                }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("mark23") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("mark23")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                mark23.add(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    mark23.add(Integer.valueOf(nextRecord[i + 1]));
+                                    LOG.info("В третий объект добавлено значение {} в список к метке mark23", nextRecord[i + 1]);
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "mark23", nfe);
+                                }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("mark35") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("mark35")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                mark35.add(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    mark35.add(Integer.valueOf(nextRecord[i + 1]));
+                                    LOG.info("В третий объект добавлено значение {} в список к метке mark35", nextRecord[i + 1]);
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "mark35", nfe);
+                                }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("markFV") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("markFV")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                markFV.add(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    markFV.add(Integer.valueOf(nextRecord[i + 1]));
+                                    LOG.info("В третий объект добавлено значение {} в список к метке markFV", nextRecord[i + 1]);
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "markFV", nfe);
+                                }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("markFX") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("markFX")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                markFX.add(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    markFX.add(Integer.valueOf(nextRecord[i + 1]));
+                                    LOG.info("В третий объект добавлено значение {} в список к метке markFX", nextRecord[i + 1]);
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "markFX", nfe);
+                                }
                             }
-                        } else if (nextRecord[i].equalsIgnoreCase("markFT") && (i < nextRecord.length)) {
+                        } else if (nextRecord[i].equalsIgnoreCase("markFT")) {
                             if (!nextRecord[i + 1].equals("")) {
-                                markFT.add(Integer.valueOf(nextRecord[i + 1]));
+                                try {
+                                    markFT.add(Integer.valueOf(nextRecord[i + 1]));
+                                    LOG.info("В третий объект добавлено значение {} в список к метке markFT", nextRecord[i + 1]);
+                                } catch (NumberFormatException nfe) {
+                                    throw new CsvIllegalArgumentException(nextRecord[i + 1], "markFT", nfe);
+                                }
                             }
                         }
                     }
